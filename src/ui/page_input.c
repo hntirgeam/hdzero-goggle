@@ -21,6 +21,8 @@
  * Various enumerations and typedefs
  */
 typedef enum page_input_rows {
+    BUTTON_SOUND,
+
     ROLLER,
 
     LEFT_SHORT,
@@ -48,6 +50,8 @@ typedef struct Action {
  */
 static lv_coord_t col_dsc[] = {UI_INPUT_COLS};
 static lv_coord_t row_dsc[] = {UI_INPUT_ROWS};
+
+static btn_group_t btn_group_button_sound;
 
 static void nop() {}
 static void rollerNop(uint8_t key) { (void)key; }
@@ -118,7 +122,7 @@ static size_t rollerIndexFromId(uint16_t id) { return indexFromId(rollerActions,
  * Update the UI elements as the user navigates the page
  */
 static void reset_dropdown_styles() {
-    for (rowType_t i = 0; i < BACK_BTN; i++) {
+    for (rowType_t i = ROLLER; i < BACK_BTN; i++) {
         lv_obj_remove_style(pageItems[i], &style_dropdown, LV_PART_MAIN);
     }
 }
@@ -191,7 +195,7 @@ static void cancel_dropdown(lv_obj_t *obj) {
  * Check if any dropdown is currently opened
  */
 static bool is_any_dropdown_open() {
-    return selectedRow < BACK_BTN;
+    return (selectedRow >= ROLLER && selectedRow < BACK_BTN);
 }
 
 /**
@@ -228,6 +232,9 @@ static lv_obj_t *page_input_create(lv_obj_t *parent, panel_arr_t *arr) {
     lv_obj_set_style_grid_row_dsc_array(content, row_dsc, 0);
 
     create_select_item(arr, content);
+
+    create_btn_group_item(&btn_group_button_sound, content, 2, _lang("Button sound"), _lang("On"), _lang("Off"), "", "", 0);
+    btn_group_set_sel(&btn_group_button_sound, g_setting.inputs.button_sound ? 0 : 1);
 
     snprintf(buf, sizeof(buf), "%s:", _lang("Roller"));
     create_label_item(content, buf, 1, ROLLER, 1);
@@ -283,7 +290,9 @@ static void page_input_enter() {
     currentHighlight = 0;
     pp_input.p_arr.cur = currentHighlight;
     reset_dropdown_styles();
-    lv_obj_add_style(pageItems[currentHighlight], &style_dropdown, LV_PART_MAIN);
+    if (currentHighlight > BUTTON_SOUND && currentHighlight < BACK_BTN) {
+        lv_obj_add_style(pageItems[currentHighlight], &style_dropdown, LV_PART_MAIN);
+    }
 }
 
 /**
@@ -304,7 +313,6 @@ static void page_input_on_roller(uint8_t key) {
     if (is_any_dropdown_open()) {
         lv_obj_t *const targetItem = pageItems[selectedRow];
         uint32_t evt = (key == DIAL_KEY_DOWN) ? LV_KEY_UP : LV_KEY_DOWN;
-
         lv_event_send(targetItem, LV_EVENT_KEY, &evt);
     } else {
         reset_dropdown_styles();
@@ -319,7 +327,7 @@ static void page_input_on_roller(uint8_t key) {
             }
         }
 
-        if (pageItems[currentHighlight]->class_p == &lv_dropdown_class) {
+        if (currentHighlight >= ROLLER && currentHighlight < BACK_BTN) {
             lv_obj_add_style(pageItems[currentHighlight], &style_dropdown, LV_PART_MAIN);
         }
     }
@@ -330,23 +338,34 @@ static void page_input_on_roller(uint8_t key) {
  */
 static void page_input_on_click(uint8_t key, int sel) {
     LV_UNUSED(key);
-
-    if ((rowType_t)sel >= BACK_BTN) {
-        return;
-    }
+    rowType_t current_selection = (rowType_t)sel;
 
     if (is_any_dropdown_open()) {
         accept_dropdown(pageItems[selectedRow]);
-    } else {
-        selectedRow = (rowType_t)sel;
-        lv_obj_t *const currentItem = pageItems[selectedRow];
+        return;
+    }
 
-        lv_dropdown_open(currentItem);
-        lv_obj_t *const list = lv_dropdown_get_list(currentItem);
-        lv_obj_add_style(list, &style_dropdown, LV_PART_MAIN);
-        lv_obj_set_style_text_color(list, lv_color_make(0, 0, 0), LV_PART_SELECTED | LV_STATE_CHECKED);
-        previousSelection = lv_dropdown_get_selected(currentItem);
-        app_state_push(APP_STATE_SUBMENU_ITEM_FOCUSED);
+    switch(current_selection) {
+        case BUTTON_SOUND:
+            btn_group_toggle_sel(&btn_group_button_sound);
+            g_setting.inputs.button_sound= !btn_group_get_sel(&btn_group_button_sound);
+            settings_put_bool("input", "button_sound", g_setting.inputs.button_sound);
+            break;
+
+        case BACK_BTN:
+            break;
+
+        default:
+            selectedRow = current_selection;
+            lv_obj_t *const currentItem = pageItems[selectedRow];
+
+            lv_dropdown_open(currentItem);
+            lv_obj_t *const list = lv_dropdown_get_list(currentItem);
+            lv_obj_add_style(list, &style_dropdown, LV_PART_MAIN);
+            lv_obj_set_style_text_color(list, lv_color_make(0, 0, 0), LV_PART_SELECTED | LV_STATE_CHECKED);
+            previousSelection = lv_dropdown_get_selected(currentItem);
+            app_state_push(APP_STATE_SUBMENU_ITEM_FOCUSED);
+            break;
     }
 }
 

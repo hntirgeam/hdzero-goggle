@@ -261,6 +261,7 @@ typedef struct {
 } setting_sources_t;
 
 typedef struct {
+    bool button_sound;
     uint16_t roller;
     uint16_t left_click;
     uint16_t left_press;

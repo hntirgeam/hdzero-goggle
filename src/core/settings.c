@@ -198,6 +198,7 @@ const setting_t g_setting_defaults = {
     },
     // Refer to `page_input.c`'s arrays `rollerFunctionPointers` and `btnFunctionPointers`
     .inputs = {
+        .button_sound = 1,
         .roller = 0,
         .left_click = 0,
         .left_press = 1,
@@ -458,6 +459,7 @@ void settings_load(void) {
     g_setting.clock.format = ini_getl("clock", "format", g_setting_defaults.clock.format, SETTING_INI);
 
     // inputs
+    g_setting.inputs.button_sound = ini_getl("inputs", "button_sound", g_setting_defaults.inputs.button_sound, SETTING_INI);
     g_setting.inputs.roller = ini_getl("inputs", "roller", g_setting_defaults.inputs.roller, SETTING_INI);
     g_setting.inputs.left_click = ini_getl("inputs", "left_click", g_setting_defaults.inputs.left_click, SETTING_INI);
     g_setting.inputs.left_press = ini_getl("inputs", "left_press", g_setting_defaults.inputs.left_press, SETTING_INI);
