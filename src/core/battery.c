@@ -28,7 +28,11 @@ void battery_init() {
 }
 
 void battery_update() {
+#ifdef EMULATOR_BUILD
+    g_battery.voltage = 12000;
+#else
     g_battery.voltage = read_voltage();
+#endif
 }
 
 bool battery_is_low() {

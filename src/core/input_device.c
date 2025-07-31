@@ -25,6 +25,7 @@
 #include "osd.h"
 
 #include "core/app_state.h"
+#include "driver/beep.h"
 #include "core/dvr.h"
 #include "core/elrs.h"
 #include "core/settings.h"
@@ -477,27 +478,27 @@ static void get_event(int fd) {
                     roller_up();
                     g_key = DIAL_KEY_UP;
                     roller_up_acc = 0;
+                    beep_ui(BEEP_UI_SCROLL);
                 } else if (roller_down_acc == DIAL_SENSITIVITY) {
                     roller_down();
                     g_key = DIAL_KEY_DOWN;
                     roller_down_acc = 0;
+                    beep_ui(BEEP_UI_SCROLL);
                 }
             } else if (event_type_last == EV_KEY) {
                 if (btn_value) {
                     if (btn_press_time == 10) {
                         btn_press();
                         g_key = DIAL_KEY_PRESS;
+                        beep_ui(BEEP_UI_SHORT_PRESS);
                     }
                     btn_press_time++;
-                    // LOGI("btn down");
                 } else {
                     if (btn_press_time < 10) {
                         btn_click();
                         g_key = DIAL_KEY_CLICK;
+                        beep_ui(BEEP_UI_LONG_PRESS);
                     }
-                    // else if(btn_press_time > 200){
-                    //	btn_super_press();
-                    // }
                     btn_press_time = 0;
                 }
             }
@@ -607,20 +608,24 @@ static void *thread_input_device(void *ptr) {
                 case SDLK_s:
                     roller_up();
                     g_key = DIAL_KEY_UP;
+                    beep_ui(BEEP_UI_SCROLL);
                     break;
 
                 case SDLK_w:
                     roller_down();
                     g_key = DIAL_KEY_DOWN;
+                    beep_ui(BEEP_UI_SCROLL);
                     break;
 
                 case SDLK_d:
                     if (event.key.timestamp - btn_d_start > 500) {
                         btn_press();
                         g_key = DIAL_KEY_PRESS;
+                        beep_ui(BEEP_UI_LONG_PRESS);
                     } else {
                         btn_click();
                         g_key = DIAL_KEY_CLICK;
+                        beep_ui(BEEP_UI_SHORT_PRESS);
                     }
                     btn_d_start = 0;
                     break;
@@ -629,9 +634,11 @@ static void *thread_input_device(void *ptr) {
                     if (event.key.timestamp - btn_a_start > 500) {
                         rbtn_click(RIGHT_LONG_PRESS);
                         g_key = RIGHT_KEY_PRESS;
+                        beep_ui(BEEP_UI_LONG_PRESS);
                     } else {
                         rbtn_click(RIGHT_CLICK);
                         g_key = RIGHT_KEY_CLICK;
+                        beep_ui(BEEP_UI_SHORT_PRESS);
                     }
                     btn_a_start = 0;
                     break;
